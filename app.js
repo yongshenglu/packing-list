@@ -401,6 +401,7 @@ function goBack() {
  * 6. 视图渲染
  * ================================================================== */
 const TRASH_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+const PENCIL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
 const CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
 const CASE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>';
 
@@ -470,7 +471,8 @@ function poolResultsHTML() {
     const items = state.data.pools[pool].filter(it => !q || it.name.toLowerCase().includes(q));
     if (!items.length && q) continue;
     const rows = items.map(it =>
-      `<div class="prow"><button class="prow-name" data-action="pool-rename" data-pool="${pool}" data-id="${it.id}">${escapeHtml(it.name)}</button>
+      `<div class="prow"><button class="prow-name" data-action="pool-edit" data-pool="${pool}" data-id="${it.id}" aria-label="修改${escapeHtml(it.name)}">${escapeHtml(it.name)}</button>
+       <button class="icon-btn" data-action="pool-edit" data-pool="${pool}" data-id="${it.id}" aria-label="修改${escapeHtml(it.name)}">${PENCIL_SVG}</button>
        <button class="icon-btn del" data-action="pool-del" data-pool="${pool}" data-id="${it.id}" aria-label="删除${escapeHtml(it.name)}">${TRASH_SVG}</button></div>`).join('');
     const addRow = `<div class="addrow"><input type="text" placeholder="添加${POOL_LABEL[pool]}物品" data-add-pool="${pool}"><button class="btn" data-action="pool-add" data-pool="${pool}">添加</button></div>`;
     out += poolTag(pool) + `<div class="card">${rows || '<div class="empty" style="padding:24px"><p>物品池为空,在下方添加</p></div>'}${addRow}</div>`;
@@ -677,6 +679,21 @@ function showListMenu(l) {
     <button class="sheet-btn cancel" data-action="close-modal">取消</button></div>`);
 }
 
+let pePool = 'optional';
+function showPoolEdit(pool, id) {
+  const it = state.data.pools[pool].find(x => x.id === id);
+  if (!it) return;
+  pePool = pool;
+  showModal(`<div class="modal-card"><h3>修改物品</h3>
+    <label class="fld">名称<input id="pe-name" type="text" value="${escapeHtml(it.name)}"></label>
+    <div class="fld">所属池<div class="seg" style="margin-top:6px">
+      <button data-action="pe-pool" data-pool="essential" class="${pePool === 'essential' ? 'active' : ''}">必带</button>
+      <button data-action="pe-pool" data-pool="optional" class="${pePool === 'optional' ? 'active' : ''}">非必带</button>
+    </div></div>
+    <div class="mrow"><button class="btn ghost" data-action="close-modal">取消</button><button class="btn primary" data-action="pe-save" data-pool="${pool}" data-id="${id}">保存</button></div></div>`);
+  setTimeout(() => { const el = document.getElementById('pe-name'); if (el) { el.focus(); el.select(); } }, 50);
+}
+
 function showEditDate(l) {
   showModal(`<div class="modal-card"><h3>出发日期</h3>
     <label class="fld">留空表示不设日期<input id="ed-date" type="date" value="${escapeHtml(l.date || '')}"></label>
@@ -875,16 +892,31 @@ document.addEventListener('click', e => {
     case 'pick-confirm': doPickConfirm(); break;
 
     case 'pool-add': doPoolAdd(el.dataset.pool); break;
-    case 'pool-rename': {
-      const pool = el.dataset.pool;
-      const it = state.data.pools[pool].find(x => x.id === id);
+    case 'pool-edit': {
+      showPoolEdit(el.dataset.pool, id);
+      break;
+    }
+    case 'pe-pool': {
+      pePool = el.dataset.pool;
+      document.querySelectorAll('#modal-root .seg button').forEach(b => b.classList.toggle('active', b.dataset.pool === pePool));
+      break;
+    }
+    case 'pe-save': {
+      const srcPool = el.dataset.pool;
+      const it = state.data.pools[srcPool].find(x => x.id === id);
       if (!it) break;
-      const name = prompt('重命名物品', it.name);
-      if (name === null) break;
-      const n = name.trim();
-      if (!n || n === it.name) break;
-      if (state.data.pools[pool].some(x => x.id !== id && x.name === n)) { toast('该物品已存在'); break; }
-      mutate(d => { const t = d.pools[pool].find(x => x.id === id); if (t) t.name = n; });
+      const name = (document.getElementById('pe-name').value || '').trim();
+      if (!name) { toast('名称不能为空'); break; }
+      if (pePool === srcPool && name === it.name) { closeModal(); break; }
+      if (state.data.pools[pePool].some(x => x.id !== id && x.name === name)) { toast('该物品已存在'); break; }
+      mutate(d => {
+        const arr = d.pools[srcPool];
+        const idx = arr.findIndex(x => x.id === id);
+        arr.splice(idx, 1);
+        d.pools[pePool].push({ id, name });
+      });
+      closeModal();
+      toast('已修改');
       break;
     }
     case 'pool-del': {
@@ -1022,6 +1054,7 @@ document.addEventListener('keydown', e => {
   if (e.target.id === 'quick-add') { e.preventDefault(); doQuickAdd(); }
   else if (e.target.matches('[data-add-pool]')) { e.preventDefault(); doPoolAdd(e.target.dataset.addPool); }
   else if (e.target.id === 'nl-name') { e.preventDefault(); doNewListCreate(); }
+  else if (e.target.id === 'pe-name') { e.preventDefault(); const b = document.querySelector('[data-action="pe-save"]'); if (b) b.click(); }
 });
 
 window.addEventListener('hashchange', () => { renderRoute(); });
