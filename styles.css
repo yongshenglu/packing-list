@@ -101,11 +101,12 @@ svg{ fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; strok
 .icon-btn{ width:44px; height:44px; display:grid; place-items:center; color:var(--ink-2); flex:none; }
 .icon-btn.del{ color:var(--danger); }
 .icon-btn svg{ width:19px; height:19px; }
-.prow{ display:flex; align-items:center; border-bottom:1px solid var(--line); }
-.prow:last-child{ border-bottom:0; }
-.prow-name{ flex:1; min-width:0; text-align:left; padding:7px 0 7px 14px; font-size:15px; word-break:break-all; min-height:38px; }
-.prow .icon-btn{ width:40px; height:40px; }
-.prow .icon-btn svg{ width:17px; height:17px; }
+.chips{ display:flex; flex-wrap:wrap; gap:8px; padding:12px; }
+.chip{ display:inline-flex; align-items:stretch; background:var(--bg); border:1px solid var(--line); border-radius:999px; max-width:100%; }
+.chip-name{ min-width:0; text-align:left; padding:6px 2px 6px 13px; font-size:14px; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:168px; color:var(--ink); }
+.chip-x{ flex:none; width:26px; display:grid; place-items:center; color:var(--ink-2); }
+.chip-x svg{ width:11px; height:11px; }
+.chip-x:active{ color:var(--danger); }
 
 /* ===== 搜索 / 添加 ===== */
 .search{ margin:8px 0 4px; }

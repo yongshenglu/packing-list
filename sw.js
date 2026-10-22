@@ -1,4 +1,4 @@
-const VER = 'pl-v4';
+const VER = 'pl-v5';
 const ASSETS = [
   './', './index.html', './styles.css', './app.js', './manifest.json',
   './icons/icon-192.png', './icons/icon-512.png',

@@ -401,7 +401,7 @@ function goBack() {
  * 6. 视图渲染
  * ================================================================== */
 const TRASH_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
-const PENCIL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
+const X_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 const CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
 const CASE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>';
 
@@ -470,12 +470,12 @@ function poolResultsHTML() {
   for (const pool of POOLS) {
     const items = state.data.pools[pool].filter(it => !q || it.name.toLowerCase().includes(q));
     if (!items.length && q) continue;
-    const rows = items.map(it =>
-      `<div class="prow"><button class="prow-name" data-action="pool-edit" data-pool="${pool}" data-id="${it.id}" aria-label="修改${escapeHtml(it.name)}">${escapeHtml(it.name)}</button>
-       <button class="icon-btn" data-action="pool-edit" data-pool="${pool}" data-id="${it.id}" aria-label="修改${escapeHtml(it.name)}">${PENCIL_SVG}</button>
-       <button class="icon-btn del" data-action="pool-del" data-pool="${pool}" data-id="${it.id}" aria-label="删除${escapeHtml(it.name)}">${TRASH_SVG}</button></div>`).join('');
+    const chips = items.map(it =>
+      `<span class="chip"><button class="chip-name" data-action="pool-edit" data-pool="${pool}" data-id="${it.id}" aria-label="修改${escapeHtml(it.name)}">${escapeHtml(it.name)}</button>
+       <button class="chip-x" data-action="pool-del" data-pool="${pool}" data-id="${it.id}" aria-label="删除${escapeHtml(it.name)}">${X_SVG}</button></span>`).join('');
     const addRow = `<div class="addrow"><input type="text" placeholder="添加${POOL_LABEL[pool]}物品" data-add-pool="${pool}"><button class="btn" data-action="pool-add" data-pool="${pool}">添加</button></div>`;
-    out += poolTag(pool) + `<div class="card">${rows || '<div class="empty" style="padding:24px"><p>物品池为空,在下方添加</p></div>'}${addRow}</div>`;
+    const body = items.length ? `<div class="chips">${chips}</div>` : '<div class="empty" style="padding:22px"><p>物品池为空,在下方添加</p></div>';
+    out += poolTag(pool) + `<div class="card">${body}${addRow}</div>`;
   }
   if (q && !out) out = `<div class="empty"><p>未找到匹配物品</p></div>`;
   return out;
@@ -498,10 +498,10 @@ function vTemplateDetail(t) {
     const idxs = [];
     t.items.forEach((it, idx) => { if (it.pool === pool) idxs.push(idx); });
     if (!idxs.length) return '';
-    const rows = idxs.map(idx =>
-      `<div class="prow"><span class="prow-name" style="padding-right:8px">${escapeHtml(t.items[idx].name)}</span>
-       <button class="icon-btn del" data-action="tpl-del-item" data-idx="${idx}" aria-label="删除${escapeHtml(t.items[idx].name)}">${TRASH_SVG}</button></div>`).join('');
-    return poolTag(pool) + `<div class="card">${rows}</div>`;
+    const chips = idxs.map(idx =>
+      `<span class="chip"><span class="chip-name">${escapeHtml(t.items[idx].name)}</span>
+       <button class="chip-x" data-action="tpl-del-item" data-idx="${idx}" aria-label="删除${escapeHtml(t.items[idx].name)}">${X_SVG}</button></span>`).join('');
+    return poolTag(pool) + `<div class="card"><div class="chips">${chips}</div></div>`;
   }).join('');
   return `
     <div class="card pad" style="margin-top:10px"><div class="setrow"><span>模版名称</span><button class="tbtn" data-action="tpl-rename" data-id="${t.id}">重命名</button></div></div>
