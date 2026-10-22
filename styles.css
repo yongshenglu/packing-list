@@ -103,7 +103,9 @@ svg{ fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; strok
 .icon-btn svg{ width:19px; height:19px; }
 .prow{ display:flex; align-items:center; border-bottom:1px solid var(--line); }
 .prow:last-child{ border-bottom:0; }
-.prow-name{ flex:1; min-width:0; text-align:left; padding:13px 0 13px 14px; font-size:16px; word-break:break-all; min-height:50px; }
+.prow-name{ flex:1; min-width:0; text-align:left; padding:7px 0 7px 14px; font-size:15px; word-break:break-all; min-height:38px; }
+.prow .icon-btn{ width:40px; height:40px; }
+.prow .icon-btn svg{ width:17px; height:17px; }
 
 /* ===== 搜索 / 添加 ===== */
 .search{ margin:8px 0 4px; }
