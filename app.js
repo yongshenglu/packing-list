@@ -92,7 +92,7 @@ const state = {
   config: null,
   dirty: false,
   lastSync: null,
-  ui: { route: { name: 'lists' }, poolSearch: '', addPool: 'optional', pick: null, editMode: false }
+  ui: { route: { name: 'lists' }, poolSearch: '', pick: null, editMode: false }
 };
 
 function sanitizeData(d) {
@@ -433,25 +433,17 @@ function vLists() {
 
 function vListDetail(l) {
   const p = progressOf(l);
-  const groups = POOLS.map(pool => {
-    const idxs = [];
-    l.items.forEach((it, idx) => { if (it.pool === pool) idxs.push(idx); });
-    if (!idxs.length) return '';
-    const rows = idxs.map(idx => {
-      const it = l.items[idx];
-      const del = state.ui.editMode
-        ? `<button class="icon-btn del" data-action="list-del-item" data-idx="${idx}" aria-label="删除${escapeHtml(it.name)}">${TRASH_SVG}</button>` : '';
-      return `<div class="check-row${it.checked ? ' done' : ''}">
-        <label class="chk"><input type="checkbox" data-check="list" data-idx="${idx}"${it.checked ? ' checked' : ''}><span class="box">${CHECK_SVG}</span><span class="chk-name">${escapeHtml(it.name)}</span></label>${del}</div>`;
-    }).join('');
-    return poolTag(pool) + `<div class="card">${rows}</div>`;
+  const rows = l.items.map((it, idx) => {
+    const del = state.ui.editMode
+      ? `<button class="icon-btn del" data-action="list-del-item" data-idx="${idx}" aria-label="删除${escapeHtml(it.name)}">${TRASH_SVG}</button>` : '';
+    return `<div class="check-row${it.checked ? ' done' : ''}">
+      <label class="chk"><input type="checkbox" data-check="list" data-idx="${idx}"${it.checked ? ' checked' : ''}><span class="box">${CHECK_SVG}</span><span class="chk-name">${escapeHtml(it.name)}</span></label>${del}</div>`;
   }).join('');
 
   const body = l.items.length
-    ? groups
+    ? `<div class="card">${rows}</div>`
     : `<div class="empty">${CASE_SVG}<p>清单还是空的</p><button class="btn primary" data-action="open-picker" data-target="list:${l.id}">从物品池选择</button></div>`;
 
-  const addPool = state.ui.addPool || 'optional';
   const html = `
     <div class="prog${p.complete ? ' complete' : ''}">
       <div class="prog-top"><span class="prog-num"><b id="lp-done">${p.done}</b> / <span id="lp-total">${p.total}</span></span><span class="prog-label" id="lp-label">${p.complete ? '全部打包完成' : '已打包'}</span></div>
@@ -460,10 +452,6 @@ function vListDetail(l) {
     </div>
     ${body}
     <div class="stick-bottom">
-      <div class="seg">
-        <button data-action="add-pool" data-pool="optional" class="${addPool === 'optional' ? 'active' : ''}">非必带</button>
-        <button data-action="add-pool" data-pool="essential" class="${addPool === 'essential' ? 'active' : ''}">必带</button>
-      </div>
       <div class="addrow"><input id="quick-add" type="text" placeholder="添加物品(只进清单,不动物品池)"><button class="btn" data-action="quick-add">添加</button></div>
       ${l.items.length ? `<button class="btn block" data-action="open-picker" data-target="list:${l.id}">从物品池选择</button>` : ''}
     </div>`;
@@ -569,7 +557,7 @@ function applyPickToList(l, p) {
       items.push({ pool: k.slice(0, i), name: k.slice(i + 1), checked: false });
     }
   }
-  l.items = sortItems(items);
+  l.items = items;
 }
 
 function vSettings() {
@@ -635,7 +623,7 @@ function doQuickAdd() {
   const input = document.getElementById('quick-add');
   const name = (input.value || '').trim();
   if (!name) return;
-  const pool = state.ui.addPool || 'optional';
+  const pool = POOLS.find(pl => state.data.pools[pl].some(it => it.name === name)) || 'optional';
   const l = getList(r.id);
   if (l.items.some(it => it.pool === pool && it.name === name)) { toast('该物品已在清单中'); return; }
   mutate(d => {
@@ -714,8 +702,7 @@ function doPickConfirm() {
   if (t.startsWith('list:')) {
     mutate(d => { const l = getList(t.slice(5), d); applyPickToList(l, p); l.updatedAt = nowISO(); });
     location.hash = '#/list/' + t.slice(5);
-  } else if (t.startsWith('template:')) {
-    mutate(d => {
+  } else if (t.startsWith('template:')) {    mutate(d => {
       const tp = getTemplate(t.slice(9), d);
       const items = [...p.selected].map(k => { const i = k.indexOf(SEP); return { pool: k.slice(0, i), name: k.slice(i + 1) }; });
       tp.items = sortItems(items);
@@ -884,11 +871,6 @@ document.addEventListener('click', e => {
       break;
     }
     case 'quick-add': doQuickAdd(); break;
-    case 'add-pool': {
-      state.ui.addPool = el.dataset.pool;
-      document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('active', b.dataset.pool === state.ui.addPool));
-      break;
-    }
     case 'open-picker': location.hash = '#/pick?target=' + encodeURIComponent(el.dataset.target); break;
     case 'pick-confirm': doPickConfirm(); break;
 
